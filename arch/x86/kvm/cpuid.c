@@ -1500,17 +1500,25 @@ EXPORT_SYMBOL_GPL(total_cycles_in_exits);
 int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
 {
 	u32 eax, ebx, ecx, edx;
+	printk("Entering cpuid");
 
 	if (cpuid_fault_enabled(vcpu) && !kvm_require_cpl(vcpu, 0))
 		return 1;
 
 	eax = kvm_rax_read(vcpu);
 	ecx = kvm_rcx_read(vcpu);
+	printk("eax = %d and ecx = %d", eax, ecx);
 	if (eax == 0x4ffffffc) {
 		eax = total_no_of_exits;
+		ebx = 0;
+		ecx = 0;
+		edx = 0;
+		printk("Total no of exits %d", total_no_of_exits);
 	} else if (eax == 0x4ffffffd) {
-		ebx = (u32)((total_cycles_in_exits & 0xffffffff00000000) >> 32);
+		ebx = (u32)(total_cycles_in_exits >> 32);
 		ecx = (u32)(total_cycles_in_exits & 0xffffffff);
+		edx = 0;
+		printk("Total time spent in processing exits is %d, %d", ebx, ecx);
 	}else {
 		kvm_cpuid(vcpu, &eax, &ebx, &ecx, &edx, false);
 	}

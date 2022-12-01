@@ -6464,12 +6464,12 @@ unexpected_vmexit:
 static int vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
 {
 	extern u64 total_cycles_in_exits;
-	u64 start_time = rdtsc();
+	u64 exit_start_time = rdtsc();
 	
 	int ret = __vmx_handle_exit(vcpu, exit_fastpath);
 
-	u64 end_time = rdtsc();
-	total_cycles_in_exits = total_cycles_in_exits + end_time - start_time;
+	u64 exit_end_time = rdtsc();
+	total_cycles_in_exits = total_cycles_in_exits + (exit_end_time - exit_start_time);
 	/*
 	 * Exit to user space when bus lock detected to inform that there is
 	 * a bus lock in guest.
