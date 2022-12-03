@@ -1495,11 +1495,15 @@ EXPORT_SYMBOL_GPL(kvm_cpuid);
 
 u32 total_no_of_exits;
 u64 total_cycles_in_exits;
+u32 exit_frequency[70] = { [0 ... 69] = 0 };
+u64 cycles_in_exit[70] = { [0 ... 69] = 0 };
 EXPORT_SYMBOL_GPL(total_no_of_exits);
 EXPORT_SYMBOL_GPL(total_cycles_in_exits);
+EXPORT_SYMBOL_GPL(exit_frequency);
+EXPORT_SYMBOL_GPL(cycles_in_exit);
 int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
 {
-	u32 eax, ebx, ecx, edx;
+	u32 eax, ebx, ecx, edx, ecx_copy;
 	printk("Entering cpuid");
 
 	if (cpuid_fault_enabled(vcpu) && !kvm_require_cpl(vcpu, 0))
@@ -1519,7 +1523,32 @@ int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
 		ecx = (u32)(total_cycles_in_exits & 0xffffffff);
 		edx = 0;
 		printk("Total time spent in processing exits is %d, %d", ebx, ecx);
-	}else {
+	} else if (eax == 0x4ffffffe){
+		//skip exit reasons 35, 38, 42 as they are not available in the SDM
+		if(ecx < 0 || ecx > 70 || ecx == 35 || ecx == 38 || ecx == 42){
+			printk("Exit type %u is not defined by the SDM\n", ecx);
+			eax = ebx = ecx = 0;
+			edx = 0xffffffff;	
+		} else {
+			ecx_copy = ecx;
+			eax = exit_frequency[ecx];
+			ebx = ecx = edx = 0;
+			printk("Exit frequency for exit %d is %d", ecx_copy, eax);
+		}
+	} else if (eax == 0x4fffffff){
+		//skip exit reasons 35, 38, 42 as they are not available in the SDM
+		if(ecx < 0 || ecx > 70 || ecx == 35 || ecx == 38 || ecx == 42){
+			printk("Exit type %u is not defined by the SDM\n", ecx);
+			eax = ebx = ecx = 0;
+			edx = 0xffffffff;	
+		} else {
+			ecx_copy = ecx;
+			ebx = (u32)(cycles_in_exit[ecx_copy] >> 32);
+			ecx = (u32)(cycles_in_exit[ecx_copy] & 0xffffffff);
+			eax = edx = 0;
+			printk("Time spent processing exit %d is %d, %d", ecx_copy, ebx, ecx); 
+		}
+	} else {
 		kvm_cpuid(vcpu, &eax, &ebx, &ecx, &edx, false);
 	}
 	kvm_rax_write(vcpu, eax);
