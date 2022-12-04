@@ -1504,14 +1504,12 @@ EXPORT_SYMBOL_GPL(cycles_in_exit);
 int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
 {
 	u32 eax, ebx, ecx, edx, ecx_copy;
-	printk("Entering cpuid");
 
 	if (cpuid_fault_enabled(vcpu) && !kvm_require_cpl(vcpu, 0))
 		return 1;
 
 	eax = kvm_rax_read(vcpu);
 	ecx = kvm_rcx_read(vcpu);
-	printk("eax = %d and ecx = %d", eax, ecx);
 	if (eax == 0x4ffffffc) {
 		eax = total_no_of_exits;
 		ebx = 0;
